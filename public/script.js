@@ -1,8 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // ---------------- TERMINAL LOGIC ----------------
   const output = document.getElementById('terminal-output');
   const input = document.getElementById('terminal-input');
   const prompt = document.getElementById('prompt');
-  const audio = new Audio("https://cdn.pixabay.com/download/audio/2022/03/10/audio_ebce1a60c1.mp3?filename=keystroke-121275.mp3");
+  const audio = new Audio("audio_ebce1a60c1.mp3"); // Usar archivo local, ponerlo en /public/
 
   const currentUser = "user";
   const hostname = "webhost";
@@ -29,6 +30,14 @@ document.addEventListener("DOMContentLoaded", () => {
     scrollToBottom();
   }
 
+  function appendPre(text, className = "") {
+    const pre = document.createElement("pre");
+    if (className) pre.className = className;
+    pre.textContent = text;
+    output.appendChild(pre);
+    scrollToBottom();
+  }
+
   function scrollToBottom() {
     const container = document.getElementById("terminal-container");
     container.scrollTop = container.scrollHeight;
@@ -41,7 +50,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     for (let i = 0; i < text.length; i++) {
       p.textContent += text[i];
-      if (text[i] !== " ") audio.play();
+      if (text[i] !== " ") {
+        try { audio.play(); } catch {}
+      }
       await new Promise(r => setTimeout(r, delay));
     }
     scrollToBottom();
@@ -60,21 +71,66 @@ document.addEventListener("DOMContentLoaded", () => {
     updatePrompt();
   }
 
-    function getAutocomplete(inputValue) {
-        const tokens = inputValue.trim().split(" ");
-        if (tokens.length === 1) {
-        const match = comandosDisponibles.find(cmd => cmd.startsWith(tokens[0]));
-        if (match) tokens[0] = match;
-        } else if (tokens[0] === "cd" || tokens[0] === "cat") {
-        const pathList = archivos[currentPath] || [];
-        const partial = tokens[1] || "";
-        const match = pathList.find(item => item.startsWith(partial));
-        if (match) tokens[1] = match;
-        }
-        return tokens.join(" ");
+  function getAutocomplete(inputValue) {
+    const tokens = inputValue.trim().split(" ");
+    if (tokens.length === 1) {
+      const match = comandosDisponibles.find(cmd => cmd.startsWith(tokens[0]));
+      if (match) tokens[0] = match;
+    } else if (tokens[0] === "cd" || tokens[0] === "cat") {
+      const pathList = archivos[currentPath] || [];
+      const partial = tokens[1] || "";
+      const match = pathList.find(item => item.startsWith(partial));
+      if (match) tokens[1] = match;
     }
+    return tokens.join(" ");
+  }
 
-  function handleCommand(cmd) {
+  function getSimilarCommand(cmd) {
+    let bestMatch = "";
+    let bestScore = 0;
+    for (const c of comandosDisponibles) {
+      const dist = levenshtein(cmd, c);
+      const score = 1 - dist / Math.max(c.length, cmd.length);
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = c;
+      }
+    }
+    return bestScore > 0.6 ? bestMatch : null;
+  }
+
+  function levenshtein(a, b) {
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  async function simulatedBenjaResponse(input) {
+    const response = await fetch("/api/responder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input })
+    });
+
+    const data = await response.json();
+    return data.respuesta;
+  }
+
+  async function handleCommand(cmd) {
     const args = cmd.trim().split(" ");
     const command = args[0];
 
@@ -115,7 +171,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const archivo = args[1];
       const pathActual = archivos[currentPath];
       if (pathActual && pathActual.includes(archivo)) {
-        appendLine(`Contenido de ${archivo}: [simulado]`);
+        try {
+          const res = await fetch(`/api/cat?archivo=${encodeURIComponent(archivo)}`);
+          if (res.ok) {
+            const data = await res.json();
+            appendLine(`Contenido de ${archivo}:`);
+            appendPre(data.contenido, "bg-gray-900 text-green-200 rounded px-2 py-1 my-1 overflow-x-auto");
+          } else {
+            appendLine("No se pudo leer el archivo.");
+          }
+        } catch {
+          appendLine("No se pudo leer el archivo.");
+        }
       } else {
         appendLine("Archivo no encontrado.");
       }
@@ -129,8 +196,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (command === "cv") {
       appendLine("Descargando archivo 'cv.pdf'...");
       const a = document.createElement("a");
-      a.href = "cv.pdf";
-      a.download = "cv.pdf";
+      a.href = "CurriculumMacias-2024.pdf";
+      a.download = "CurriculumMacias-2024.pdf";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -143,53 +210,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   }
-
-
-  function getSimilarCommand(cmd) {
-    let bestMatch = "";
-    let bestScore = 0;
-    for (const c of comandosDisponibles) {
-      const dist = levenshtein(cmd, c);
-      const score = 1 - dist / Math.max(c.length, cmd.length);
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = c;
-      }
-    }
-    return bestScore > 0.6 ? bestMatch : null;
-  }
-
-  function levenshtein(a, b) {
-    const matrix = [];
-    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-    for (let i = 1; i <= b.length; i++) {
-      for (let j = 1; j <= a.length; j++) {
-        if (b.charAt(i - 1) === a.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1,
-            matrix[i][j - 1] + 1,
-            matrix[i - 1][j] + 1
-          );
-        }
-      }
-    }
-    return matrix[b.length][a.length];
-  }
-
-  async function simulatedBenjaResponse(input) {
-    const response = await fetch("http://localhost:3000/api/responder", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input })
-    });
-
-    const data = await response.json();
-    return data.respuesta;
-  }
-
 
   document.getElementById("terminal-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -219,6 +239,43 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  document.addEventListener("click", () => input.focus());
   showLoginMessage();
+
+  // ---------------- ANOTACIONES LOGIC ----------------
+
+  // Cargar y mostrar anotaciones
+  async function cargarAnotaciones() {
+    const res = await fetch("/api/anotaciones");
+    const anotaciones = await res.json();
+    const lista = document.getElementById("anotaciones-list");
+    lista.innerHTML = "";
+    anotaciones.slice().reverse().forEach(a => {
+      const div = document.createElement("div");
+      div.className = "bg-gray-800 rounded-lg p-4 shadow-lg border border-gray-700 hover:border-green-400 transition";
+      div.innerHTML = `<div class="font-bold text-green-400 text-lg mb-1">${a.titulo}</div>
+                       <div class="text-gray-200 mb-1">${a.contenido}</div>
+                       <div class="text-xs text-gray-400 text-right">${new Date(a.fecha).toLocaleString()}</div>`;
+      lista.appendChild(div);
+    });
+  }
+
+  // Guardar anotación nueva
+  document.getElementById("anotacion-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const titulo = document.getElementById("titulo").value;
+    const contenido = document.getElementById("contenido").value;
+    const res = await fetch("/api/anotaciones", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ titulo, contenido })
+    });
+    if (res.ok) {
+      document.getElementById("anotacion-form").reset();
+      cargarAnotaciones();
+    } else {
+      alert("No se pudo guardar la anotación");
+    }
+  });
+
+  cargarAnotaciones(); // Cargar al inicio
 });
