@@ -1,1 +1,12 @@
-texto de prueba
+Autogestión del ciclo de vida
+Manejo de bases de datos
+Automatización y scripting
+DevOps básico: despliegue en servidores propios, administración de entornos, configuración de dominios, certificados SSL, y manejo de backups
+Capacidad de documentacion y buenas practicas, pero siempre priorizo la entrega
+
+SoftSkills:
+
+Autonomía y aprendizaje continuo
+Gestión del tiempo
+Comunicación no tan clara, pero busco que sea lo mas preciso posible
+Adaptabilidad, capacidad para moverme en distintos lenguajes de forma agil

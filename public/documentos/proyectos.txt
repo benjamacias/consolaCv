@@ -1,1 +1,14 @@
-texto de prueba
+excelAfipPyexcelAfipPy: Este proyecto sirve para calcular comprobantes devueltos por afip y organizar los datos en un nuevo archivo con los datos del cliente, perfecto para contadores
+
+zenless-Game: Es un juego desarrollado como proyecto grupal para adquirir habilidades de trabajo y demostrar capacidades de programacion en c
+
+consolaCv: Es el proyecto base donde se trabaja la demostracion de mi curriculum
+
+tareasvarias: Son cortos ejercicios donde practicaba javascript, dentro de ellos una muy buena calculadora y un juego de bingo
+
+countSistem: Proyecto final y entrega a cliente, donde logre de principio a fin diseñar, programar y detallar la informacion de un sistema de logistica, su facturacion de una manera simple y moderna. El sistema no solo esta listo para su uso, si no que es altamente profesional y cuidando el detalle
+
+Comedero automatico para mascotas: Diseñe un comedero automatico para mascotas usando ESP32 la cual crea una red por wifi para conectarse y mediante el sistema se guardaran los datos para el peso de la alimentacion y horarios en la memoria volatil del dispositivo. faltaria agregar el poder tasar el plato para que sea mas versatil, el modelo de impresion 3d fue sacado de internet
+
+
+
