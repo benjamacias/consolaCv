@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import fs from "fs/promises";
 
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Para __dirname con ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -113,6 +113,6 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.listen(port, () => {
-  console.log(`Servidor escuchando en http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Servidor escuchando en puerto ${PORT}`);
 });
