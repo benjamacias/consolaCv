@@ -40,7 +40,9 @@ app.get("/api/cat", async (req, res) => {
 });
 
 // --------- API: Respuestas inteligentes (puede leer de un json si querés) ----------
-import respuestas from "./respuestas.json" assert { type: "json" };
+const respuestas = JSON.parse(
+  await fs.readFile(path.join(__dirname, "respuestas.json"), "utf-8")
+);
 
 function levenshtein(a, b) {
   const matrix = Array.from({ length: b.length + 1 }, (_, i) => [i]);
